@@ -1,0 +1,56 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL") 
+}
+
+model User {
+    id        String        @id @default(uuid())
+    username  String        @unique
+    password  String
+    createdAt DateTime      @default(now())
+    videos    Video[]
+}
+
+enum VideoStatus {
+    uploaded
+    transcoding
+    ready
+    failed
+}
+
+model Video {
+    id           String        @id @default(uuid())
+    title        String        
+    description  String?
+    uploaderId   String
+    uploader     User          @relation(fields: [uploaderId], references: [id])
+    rawPath      String
+    hlsPath      String?
+    thumbnail    String?
+    status       VideoStatus  @default(uploaded)
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
+    jobs         TranscodeJob[]
+}
+
+enum JobStatus {
+    pending
+    running 
+    done
+    failed
+}
+
+model TranscodeJob {
+    id           String       @id @default(uuid())
+    video        Video        @relation(fields: [videoId], references: [id])
+    videoId      String
+    type         String
+    status       JobStatus    @default(pending)
+    output       String?
+    createdAt    DateTime     @default(now())
+    updatedAt    DateTime     @updatedAt
+}
